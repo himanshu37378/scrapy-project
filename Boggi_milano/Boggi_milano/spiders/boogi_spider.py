@@ -30,8 +30,8 @@ class BoogiSpiderSpider(scrapy.Spider):
             number_of_pages = 2
             # print(total_count)
             for pages in range(current_page, number_of_pages):
-                # next_page = f'?start={12}&sz=12'
-                next_page_url = selector.xpath('//a[contains(@class,"page-switcher next")]/@href').extract_first()
+                next_page_url = f'{response.url}?start={pages * page_size}&sz={page_size}'
+                # next_page_url = selector.xpath('//a[contains(@class,"page-switcher next")]/@href').extract_first()
                 yield scrapy.Request(url=next_page_url, headers=self.header, callback=self.category_parser,
                                      meta={'first_hit': False, 'current_page': f"{pages + 1}"})
 
@@ -42,7 +42,7 @@ class BoogiSpiderSpider(scrapy.Spider):
             # print(jeans_url)
             yield scrapy.Request(url=jeans_url, headers=self.header, callback=self.product_parser)
 
-    def product_parser(self, response, ):
+    def product_parser(self, response):
 
         selector = Selector(text=response.text)
         items = BoggiMilanoItem()
@@ -57,9 +57,9 @@ class BoogiSpiderSpider(scrapy.Spider):
         description = "".join(description_value)
         feature_image = selector.xpath('//img[contains(@class, "product-image-hero")]/@src').extract_first()
         mrp_value = selector.xpath('//span[contains(@class,"product-standard-price")]/text()').extract_first()
-        mrp_value = mrp_value.replace("\n", "").strip()
-        mrp = float(re.search(r'(\d+,\d+)', mrp_value).group(1).replace(',','.'))
-        price = selector.xpath('//span[contains(@class,"product-sales-price")]/text()').extract_first()
+        mrp_value = mrp_value.replace("\n", "").strip() if mrp_value else None
+        mrp = float(re.search(r'(\d+,\d+)', mrp_value).group(1).replace(',','.')) if mrp_value else None
+        price = selector.xpath('//span[contains(@class,"product-sales") or contains(@class,"price-sales")]/text()').extract_first()
         selling_price = float(re.search(r'(\d+,\d+)', price).group(1).replace(',','.'))
         # pdp_images = selector.xpath('//img[starts-with(@data-index, "1") or starts-with(@data-index, "2") or starts-with(@data-index, "3") or starts-with(@data-index, "4") or starts-with(@data-index, "5")]/@src').get()
         pdp_images = selector.xpath('//img[contains(@class,"product-thumbnail")]/@src').extract()
@@ -101,6 +101,7 @@ class BoogiSpiderSpider(scrapy.Spider):
         items['style_attributes'] = style_attributes
         # items['sizes'] = sizes
         # items['availability'] = availability
+
         items['variants'] = variants
         items['related_products'] = related_products
         items['relation'] = relation
