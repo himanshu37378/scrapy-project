@@ -35,8 +35,7 @@ class BoogiSpiderSpider(scrapy.Spider):
                 yield scrapy.Request(url=next_page_url, headers=self.header, callback=self.category_parser,
                                      meta={'first_hit': False, 'current_page': f"{pages + 1}"})
 
-        jeans = selector.xpath(
-            '//div[contains(@class,"product-image")]/a[contains(@class,"product-image-render")]/@href').extract()
+        jeans = selector.xpath('//div[contains(@class,"product-image")]/a[contains(@class,"product-image-render")]/@href').extract()
         for jean in jeans:
             jeans_url = jean
             # print(jeans_url)
